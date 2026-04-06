@@ -1,0 +1,9 @@
+- name: exemplar-web-cloudflare
+  rebuildDelay: 7d
+  registry: ghcr.io
+  repository: cascadeguard/exemplar-web-cloudflare
+  source:
+    branch: main
+    dockerfile: Dockerfile
+    provider: github
+    repo: cascadeguard/cascadeguard-exemplar-web-cloudflare

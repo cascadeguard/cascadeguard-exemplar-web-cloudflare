@@ -12,6 +12,7 @@ name: Scheduled CVE Scan
 permissions:
   contents: read
   issues: write  # open CVE issues automatically
+  packages: read  # pull images from GHCR
   security-events: write
 
 jobs:
@@ -29,6 +30,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Pull published image
         run: docker pull ${{ matrix.registry }}/${{ matrix.image }}:${{ matrix.tag }}
@@ -65,6 +73,17 @@ jobs:
         with:
           script: |
             const title = `[CVE] New vulnerabilities in ${{ matrix.name }}`;
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'vulnerability,automated',
+              per_page: 100,
+            });
+            if (existing.data.some(i => i.title === title)) {
+              core.info(`Open CVE issue already exists for "${title}" — skipping duplicate creation.`);
+              return;
+            }
             const body = [
               `## Automated CVE Alert`,
               ``,
